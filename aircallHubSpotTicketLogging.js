@@ -13,7 +13,7 @@ const PIPELINE_STAGE_CLOSED_ID = 4;
 // The ID of the pipleline stage you want to use when creating a new ticket
 const NEW_TICKET_PIPLELINE_STAGE_ID = 1;
 // The generic subject name of the new ticket (if one is required to be created)
-const NEW_TICKET_SUBJECT = "New Deal CX Line";
+var NEW_TICKET_SUBJECT = "New Deal CX Line";
 
 
 
@@ -30,8 +30,14 @@ exports.main = (event, callback) => {
     apiKey: apiKey
   });
   
-  hubspotClient.crm.contacts.basicApi.getById(event.object.objectId, ["email", "phone"])
+  hubspotClient.crm.contacts.basicApi.getById(event.object.objectId, ["email", "phone", "firstname", "lastname"])
     .then(results => {
+    	let firstNameLastName = results.body.properties.firstname + " " + results.body.properties.lastname;
+    
+    	// Include the contact's first name and last name in the ticket 
+    	// subject (if one needs to be created)
+    	NEW_TICKET_SUBJECT += ": " + firstNameLastName;
+          
     	// Get the contact ID that triggered this HS workflow
     	let contactId = results.body.properties.hs_object_id;
     	// Also retrieve the contact's owner ID
@@ -94,7 +100,7 @@ exports.main = (event, callback) => {
           	// Set the HS API options to get all recent engagements
           	options = {
             	"method": "GET",
-                "url": `https://api.hubapi.com/engagements/v1/engagements/recent/modified?hapikey=${apiKey}`
+                "url": `https://api.hubapi.com/engagements/v1/engagements/recent/modified?count=100&hapikey=${apiKey}`
             };
 
           	new Promise((resolve) => {
